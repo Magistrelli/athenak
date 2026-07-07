@@ -208,6 +208,24 @@ void EOSCompOSE<LogPolicy>::ReadTableFromFile(std::string fname) {
       }
     }
 
+    { // Read effective nucleon potential difference -> dU
+      Real * table_dU = nullptr;
+      if (table.HasField("dU")) {
+        table_dU = table["dU"];
+      } else {
+        // Dataset "dU" not found: fill table with zeros
+        table_dU = new Real[m_nt * m_ny * m_nn]();
+      }
+      for (size_t in=0; in<m_nn; ++in) {
+        for (size_t iy=0; iy<m_ny; ++iy) {
+          for (size_t it=0; it<m_nt; ++it) {
+            size_t iflat = it + m_nt*(iy + m_ny*in);
+            host_table(ECDU,in,iy,it) = table_dU[iflat];
+          }
+        }
+      }
+    }
+
     // Copy from host to device
     Kokkos::deep_copy(m_log_nb, host_log_nb);
     Kokkos::deep_copy(m_yq,     host_yq);

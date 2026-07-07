@@ -208,6 +208,7 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
           Real mu_b = eos.GetBaryonChemicalPotential(nb, T, &Y);
           Real mu_q = eos.GetChargeChemicalPotential(nb, T, &Y);
           Real mu_le = eos.GetElectronLeptonChemicalPotential(nb, T, &Y);
+          Real dU = eos.GetInteractionPotentialDifference(nb, T, &Y);
 
           Real mu_n = mu_b;
           Real mu_p = mu_b + mu_q;
@@ -224,7 +225,8 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
           Real eta_0_non_th_loc[4]{}, abs_0_non_th_loc[4]{};
 
           // Note: everything sent and received are in code units
-          bns_nurates(nb, T, yp, yn, mu_n, mu_p, mu_e, nudens_0, nudens_1, chi_loc,
+          bns_nurates(nb, T, yp, yn, mu_n, mu_p, mu_e, dU,
+                      nudens_0, nudens_1, chi_loc,
                       eta_0_loc, eta_1_loc, abs_0_loc, abs_1_loc, scat_0_loc,
                       scat_1_loc, eta_1_non_th_loc, abs_1_non_th_loc,
                       eta_0_non_th_loc, abs_0_non_th_loc,

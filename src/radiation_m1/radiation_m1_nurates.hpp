@@ -62,7 +62,7 @@ struct NuratesParams {
 };
 
 //! \fn void bns_nurates(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_n, Real &mu_p,
-//!                      Real &mu_e, Real &n_nue, Real &j_nue, Real &chi_nue,
+//!                      Real &mu_e, Real &dU, Real &n_nue, Real &j_nue, Real &chi_nue,
 //!                      Real &n_anue, Real &j_anue, Real &chi_anue, Real &n_nux,
 //!                      Real &j_nux, Real &chi_nux, Real &n_anux, Real &j_anux,
 //!                      Real &chi_anux, Real &R_nue, Real &R_anue, Real &R_nux,
@@ -87,6 +87,7 @@ struct NuratesParams {
 //   \param[in] mu_n            neutron chemical potential (MeV)
 //   \param[in] mu_p            proton chemical potential (MeV)
 //   \param[in] mu_e            electron chemical potential (MeV)
+//   \param[in] dU              effective nucleon potential difference (MeV)
 //   \param[in] n_nue           number density e- neutrinos (code units)
 //   \param[in] j_nue           energy density e- neutrinos (code units)
 //   \param[in] chi_nue         eddington factor e- neutrinos (dimensionless)
@@ -130,7 +131,7 @@ struct NuratesParams {
 //   \param[in]  nurates_units   bns_nurates units
 
 KOKKOS_INLINE_FUNCTION
-void bns_nurates(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_n, Real &mu_p, Real &mu_e,
+void bns_nurates(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_n, Real &mu_p, Real &mu_e, Real &dU,
                  Real nudens_0[4],
                  Real nudens_1[4],
                  Real chi[4],
@@ -279,14 +280,14 @@ void bns_nurates(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_n, Real &mu_
   grey_op_params.eos_pars.nb = nb * unit_num_dens;  // [baryon/nm^3]
   grey_op_params.eos_pars.temp = temp;              // [MeV]
   grey_op_params.eos_pars.yp = yp;                  // [dimensionless]
-  grey_op_params.eos_pars.yn = yn;              // [dimensionless]
+  grey_op_params.eos_pars.yn = yn;                  // [dimensionless]
   grey_op_params.eos_pars.mu_e = mu_e;              // [MeV]
   grey_op_params.eos_pars.mu_p = mu_p;              // [MeV]
   grey_op_params.eos_pars.mu_n = mu_n;              // [MeV]
 
-  // @TODO: add these quantities!
-  grey_op_params.eos_pars.dU = 0;      // [MeV]
-  grey_op_params.eos_pars.dm_eff = 0;  // [MeV]
+  grey_op_params.eos_pars.dU = dU;      // [MeV]
+  // @TODO: add this quantity!
+  grey_op_params.eos_pars.dm_eff = 0;   // [MeV]
 
   // reconstruct distribution function
   if (!nurates_params.use_equilibrium_distribution) {
