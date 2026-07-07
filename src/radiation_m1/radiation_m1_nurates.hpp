@@ -45,7 +45,7 @@ struct NuratesParams {
   bool use_NN_medium_corr;
   bool neglect_blocking;
   bool use_decay;
-  bool use_BRT_brem;
+  bns_nurates::BremImpl brem_implementation;
   Real exclude_pair_brem_nb_max;  // remove pair/brem from nue/anue in eq-spectrum
                                   // cells where the baryon number density is below
                                   // this [nm^-3]; <= 0: never
@@ -269,9 +269,7 @@ void ComputeNuratesOpacities(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_
   grey_op_params.opacity_pars.use_NN_medium_corr = nurates_params.use_NN_medium_corr;
   grey_op_params.opacity_pars.neglect_blocking = nurates_params.neglect_blocking;
   grey_op_params.opacity_pars.use_decay = nurates_params.use_decay;
-  grey_op_params.opacity_pars.brem_implementation =
-      nurates_params.use_BRT_brem ? bns_nurates::BREM_BRT06
-                                  : bns_nurates::BREM_HR98;
+  grey_op_params.opacity_pars.brem_implementation = nurates_params.brem_implementation;
 
   // populate EOS quantities
   grey_op_params.eos_pars.nb = nb * unit_num_dens;  // [baryon/nm^3]
