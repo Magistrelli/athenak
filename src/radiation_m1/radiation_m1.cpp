@@ -159,7 +159,6 @@ RadiationM1::RadiationM1(MeshBlockPack *ppack, ParameterInput *pin)
     nurates_params.neglect_blocking =
         pin->GetOrAddBoolean("bns_nurates", "neglect_blocking", false);
     nurates_params.use_decay = pin->GetOrAddBoolean("bns_nurates", "use_decay", false);
-
     std::string brem_implementation =
         pin->GetOrAddString("bns_nurates", "brem_implementation", "HR98");
     if (brem_implementation=="HR98") {
@@ -171,6 +170,8 @@ RadiationM1::RadiationM1(MeshBlockPack *ppack, ParameterInput *pin)
                   << brem_implementation << std::endl;
         exit(EXIT_FAILURE);
     }
+    nurates_params.eq_warmup_cycles =
+        pin->GetOrAddInteger("bns_nurates", "eq_warmup_cycles", 1);
 
     nurates_params.quadrature.nx = nurates_params.quad_nx;
     nurates_params.quadrature.dim = 1;
