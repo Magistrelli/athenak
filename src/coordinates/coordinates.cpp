@@ -11,6 +11,7 @@
 #include <string>
 
 #include "athena.hpp"
+#include "globals.hpp"
 #include "mesh/mesh.hpp"
 #include "eos/eos.hpp"
 #include "cartesian_ks.hpp"
@@ -69,6 +70,14 @@ Coordinates::Coordinates(ParameterInput *pin, MeshBlockPack *ppack) :
       coord_data.rexcise =
         (pin->DoesBlockExist("radiation")) ? 1.0+sqrt(1.0-SQR(coord_data.bh_spin)) : 1.0;
 
+      // Flux excision drops to first order inside the mask.  That is applied to the
+      // hydro fluxes and, by default, to the face EMFs as well.  Setting this false
+      // keeps the first-order hydro fluxes but leaves the EMFs to the ideal CT update,
+      // so the induction equation runs one scheme everywhere.  See the comment at the
+      // EMF writes in dyn_grmhd_fofc.cpp / mhd_fofc.cpp.
+      coord_data.excision_flux_emf =
+        pin->GetOrAddBoolean("coord","excision_flux_emf",true);
+
       coord_data.excision_scheme = ExcisionScheme::fixed;
       if (is_dynamical_relativistic) {
         std::string emethod = pin->GetOrAddString("coord","excision_scheme","fixed");
@@ -98,6 +107,43 @@ Coordinates::Coordinates(ParameterInput *pin, MeshBlockPack *ppack) :
         coord_data.smooth_excision = pin->GetOrAddBoolean("coord","smooth_excision",
                                                               false);
         coord_data.tdamp = pin->GetOrAddReal("coord","tdamp",1.0);
+
+        // Frozen excision region: snapshot each horizon's center and radius the first
+        // time excision becomes active.  Freezing the radius stops the region wobbling
+        // and shrinking with rr_min.  Freezing the center too pins the region in space,
+        // so puncture drift walks it off the horizon -- hence tracking it by default.
+        coord_data.freeze_excision = pin->GetOrAddBoolean("coord","freeze_excision",
+                                                              false);
+        coord_data.freeze_excision_radius =
+            pin->GetOrAddBoolean("coord","freeze_excision_radius",true);
+        coord_data.freeze_excision_center =
+            pin->GetOrAddBoolean("coord","freeze_excision_center",false);
+        if (coord_data.freeze_excision) {
+          if (!coord_data.freeze_excision_radius &&
+              !coord_data.freeze_excision_center) {
+            std::cout << "### WARNING in " << __FILE__ << " at line "
+                      << __LINE__ << std::endl
+                      << "freeze_excision=true but both freeze_excision_radius and"
+                      << " freeze_excision_center are false: nothing is frozen."
+                      << std::endl;
+          }
+          if (coord_data.excision_scheme == ExcisionScheme::lapse) {
+            // A lapse-derived mask is not reducible to a few numbers, so it cannot be
+            // restored when Coordinates is rebuilt on remesh.
+            std::cout << "### FATAL ERROR in " << __FILE__ << " at line "
+                      << __LINE__ << std::endl
+                      << "freeze_excision is not supported with excision_scheme=lapse"
+                      << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+          if (global_variable::my_rank == 0) {
+            std::cout << "### Excision region freezing enabled: radius="
+                      << (coord_data.freeze_excision_radius ? "frozen" : "tracked")
+                      << ", center="
+                      << (coord_data.freeze_excision_center ? "frozen" : "tracked")
+                      << std::endl;
+          }
+        }
       }
 
       // boolean masks allocation

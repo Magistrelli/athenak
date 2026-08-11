@@ -158,19 +158,20 @@ void MeshRefinement::AdaptiveMeshRefinement(Driver *pdriver, ParameterInput *pin
   // Refine/derefine mesh and evolved data, set boundary conditions/timestep on new mesh
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement flagged
     RedistAndRefineMeshBlocks(pin, nnew, ndel);
+
+    // Mark one mesh-topology update event (AMR and any resulting load balancing).
+    pmy_mesh->MarkMeshUpdated();
+
     pdriver->InitBoundaryValuesAndPrimitives(pmy_mesh);
 
     MeshBlockPack* pmbp = pmy_mesh->pmb_pack;
     if (pmbp->pmhd != nullptr) {
       RepairAMRFC(pmbp->pmhd->b0);
-      if (pmbp->pdyngr == nullptr) {
-        (void) pmbp->pmhd->ConToPrim(pdriver, 0);
-      } else {
-        if (pmbp->pz4c != nullptr) {
-          (void) pmbp->pz4c->ConvertZ4cToADM(pdriver, 0);
-        }
-        (void) pmbp->pdyngr->ConToPrim(pdriver, 0);
-      }
+      // Repair changes internal faces after the first exchange finalized exterior
+      // faces. Refresh neighboring ghost fields and their primitives before the next
+      // reconstruction consumes them. This also re-exchanges M1 moments, since
+      // InitBoundaryValuesAndPrimitives covers RadiationM1 as well.
+      pdriver->InitBoundaryValuesAndPrimitives(pmy_mesh);
     }
     if (pmbp->phydro != nullptr) {
       (void) pmbp->phydro->NewTimeStep(pdriver, pdriver->nexp_stages);
@@ -678,6 +679,17 @@ void MeshRefinement::RedistAndRefineMeshBlocks(ParameterInput *pin, int nnew, in
   pm->pmb_pack->AddMeshBlocks(pin);
   pm->pmb_pack->AddCoordinates(pin);
   pm->pmb_pack->pmb->SetNeighbors(pm->ptree, pm->rank_eachmb);
+
+  // The new masks are allocated but empty, and Z4c::UpdateExcisionMasks only runs at the
+  // last stage of a cycle, so excision would be off until the end of the next cycle.
+  // Horizon masks depend only on the center/radius held by FastFlow, which survives the
+  // remesh, so they can be rebuilt now.  Lapse masks are not: they read ADM data that is
+  // not yet guaranteed to be valid here.
+  if (pm->pmb_pack->pcoord->coord_data.bh_excise &&
+      pm->pmb_pack->pcoord->coord_data.excision_scheme == ExcisionScheme::horizon &&
+      pm->pmb_pack->pz4c != nullptr) {
+    pm->pmb_pack->pcoord->UpdateExcisionMasks();
+  }
 
   Kokkos::realloc(fc_amr_repair, new_nmb_total);
   for (int m=0; m<new_nmb_total; ++m) {

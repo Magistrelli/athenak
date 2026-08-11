@@ -11,6 +11,7 @@
 
 #include <cstdio>
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -47,17 +48,31 @@ class FastFlow {
   void Find(int iter, Real time); // main functionality for finding AH
   void Write(int iter, Real time); // function for result writing
   template <int NGHOST>
-  void MetricDerivatives(Real time); // compute the metric derivatives
-  template <int NGHOST>
   void MetricInterp();
   void ComputeSphericalHarmonics();
   void RadiiFromSphericalHarmonics();
   void UpdateFlowSpectralComponents();
   void SurfaceIntegrals();
+  // Latch the excision region at the current center/rr_min; no-op if already latched.
+  void FreezeExcisionRegion(Real latch_time);
 
   // Some of the main parameters in the fast-flow algorithm
   bool ah_found; // Horizon found
   Real time_first_found; // Time, when horizon first found
+  bool ah_excise_ready; // latched: horizon has settled -> safe to begin excision
+  // Auto excision-trigger, set from <coord> (detects when the BH has stopped forming):
+  bool excise_auto;         // false (default) => excise as soon as horizon found
+  Real excise_settle_rrate; // max |dR/R|/dt for a find to count as "settled"
+  Real excise_settle_hrms;  // max surface hrms for a find to count as "settled"
+  int  excise_settle_count; // consecutive settled finds required to latch
+  Real settle_prev_time;    // previous find time (for radius-rate estimate)
+  Real settle_prev_radius;  // previous find mean coordinate radius
+  int  settle_streak;       // running count of consecutive settled finds
+  // Frozen excision region (coord/freeze_excision).  Owned here, not in Coordinates,
+  // which is rebuilt on every remesh while FastFlow survives.  Persisted into restarts.
+  bool ah_frozen;         // latched: excision region fixed at first activation
+  Real frozen_center[3];  // horizon center at the time of latching
+  Real frozen_radius;     // horizon minimum radius at the time of latching
   Real initial_radius; // Initial guess for the radius of the horizon
   Real rr_min; // Minimum radius
   Real expand_guess; // Expand the initial guess by this factor
@@ -93,7 +108,6 @@ class FastFlow {
   int lmpoints; // lmax * lmax
   int nh; // Counter variable
   bool wait_until_punc_are_close;
-  [[maybe_unused]] bool use_stored_metric_drvts;
   int nhorizon; // Number of horizons
   std::string flow_function;
   int flowflag = 0;
@@ -143,9 +157,6 @@ class FastFlow {
   };
   static constexpr int kHnvar = 11;
   Real ah_prop[kHnvar]; // Array of horizon quantities
-
-  // 5D Device array for the metric derivatives
-  DvceArray5D<Real> dg;
 
   // Vectors to hold the DvceArray1D interpolated values of GaussLegendreGrid
   DvceArray2D<Real> g_interp, K_interp, dg_interp;

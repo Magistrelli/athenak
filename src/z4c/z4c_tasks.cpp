@@ -19,6 +19,7 @@
 #include "mesh/mesh.hpp"
 #include "bvals/bvals.hpp"
 #include "z4c/compact_object_tracker.hpp"
+#include "z4c/driftcontrol/driftcontrol.hpp"
 #include "z4c/fastflow.hpp"
 #include "z4c/horizon_dump.hpp"
 #include "z4c/z4c.hpp"
@@ -316,21 +317,17 @@ TaskStatus Z4c::TrackCompactObjects(Driver *pdrive, int stage) {
       pt->EvolveTracker(pmy_pack);
       pt->WriteTracker();
     }
+    if (pmy_pack->pz4c->opt.enable_driftcontrol) {
+      pdrift_control->EvolveDriftControl();
+      pdrift_control->WriteDriftControl();
+    }
   }
   return TaskStatus::complete;
 }
 
 TaskStatus Z4c::FindHorizon(Driver *pdrive, int stage) {
   Real time = pmy_pack->pmesh->time;
-  auto &indcs = pmy_pack->pmesh->mb_indcs;
   if (stage == pdrive->nexp_stages) {
-    for (auto & pahf : pfastflow) {
-      switch (indcs.ng) {
-        case 2: pahf->MetricDerivatives<2>(time); break;
-        case 3: pahf->MetricDerivatives<3>(time); break;
-        case 4: pahf->MetricDerivatives<4>(time); break;
-      }
-    }
     for (auto & pahf : pfastflow) {
       pahf->Find(stage, time);
       pahf->Write(stage, time);
