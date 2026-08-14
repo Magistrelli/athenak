@@ -292,7 +292,7 @@ void bns_nurates(Real &nb, Real &temp, Real &yp, Real &yn, Real &mu_n, Real &mu_
 
   grey_op_params.eos_pars.dU = dU;      // [MeV]
   // @TODO: add this quantity!
-  grey_op_params.eos_pars.dm_eff = 0;   // [MeV]
+  grey_op_params.eos_pars.dm_eff = 1.29333251;  // [MeV]
 
   // reconstruct distribution function
   if (!nurates_params.use_equilibrium_distribution) {
