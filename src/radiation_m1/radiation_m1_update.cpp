@@ -6,6 +6,8 @@
 //! \file radiation_m1_update.cpp
 //! \brief beam time update for grey M1
 
+#include <iostream>
+
 #include "athena.hpp"
 #include "athena_tensor.hpp"
 #include "coordinates/adm.hpp"
