@@ -90,13 +90,26 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
   auto &m1_nvars_ = pmbp->pradm1->nvars;
 
   // get problem parameters
-  Real rho = pin->GetReal("problem", "rho");
+  Real rho = pin->GetOrAddReal("problem", "rho", -1.);
+  Real nb = pin->GetOrAddReal("problem", "nb", -1.);
   Real temp = pin->GetReal("problem", "temp");
   Real vx = pin->GetReal("problem", "vx");
   Real vy = pin->GetReal("problem", "vy");
   Real vz = pin->GetReal("problem", "vz");
   Real ye = pin->GetReal("problem", "Y_e");
 
+  Real M1_N_0 = pin->GetOrAddReal("problem", "M1_N_0", -1.);
+  Real M1_N_1 = pin->GetOrAddReal("problem", "M1_N_1", -1.);
+  Real M1_N_2 = pin->GetOrAddReal("problem", "M1_N_2", -1.);
+  Real M1_N_3 = pin->GetOrAddReal("problem", "M1_N_3", -1.);
+  Real M1_E_0 = pin->GetOrAddReal("problem", "M1_E_0", -1.);
+  Real M1_E_1 = pin->GetOrAddReal("problem", "M1_E_1", -1.);
+  Real M1_E_2 = pin->GetOrAddReal("problem", "M1_E_2", -1.);
+  Real M1_E_3 = pin->GetOrAddReal("problem", "M1_E_3", -1.);
+  bool initM1withfloors = (
+        M1_N_0 < 0. || M1_N_1 < 0. || M1_N_2 < 0. || M1_N_3 < 0. ||
+        M1_E_0 < 0. || M1_E_1 < 0. || M1_E_2 < 0. || M1_E_3 < 0.);
+  
   Real mb{};
   Primitive::EOS<EOSPolicy, ErrorPolicy> &eos =
       static_cast<dyngr::DynGRMHDPS<EOSPolicy, ErrorPolicy> *>(pmbp->pdyngr)
@@ -105,9 +118,16 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
 
   auto cgs_units = Primitive::MakeCGS();
   auto code_units = eos.GetCodeUnitSystem();
-  
+
+  if (rho >= 0.) {
+    nb = rho / mb;
+  } else {
+    assert(nb > 0.);
+    rho = nb*mb;
+  }
+
   Real rho_code = rho;
-  Real nb = rho / mb;
+  Real nb_code = nb;
   Real w_lorentz = 1. / Kokkos::sqrt(1. - vx * vx - vy * vy - vz * vz);
   
   // initialize ADM variables
@@ -138,12 +158,28 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
         w0_(m, IPR, k, j, i) = eos.GetPressure(nb, temp, &ye_);
         w0_(m, IYF, k, j, i) = ye;
 
-        for (int nuidx = 0; nuidx < nspecies_; ++nuidx) {
-          uradm1_(m, radiationm1::CombinedIdx(nuidx, M1_E_IDX, m1_nvars_), k, j, i) = m1_params_.rad_E_floor;
-          if (nspecies_ > 1) {
-            uradm1_(m, radiationm1::CombinedIdx(nuidx, M1_N_IDX, m1_nvars_), k, j, i) = m1_params_.rad_N_floor;
-          }
+        if (initM1withfloors) {
+
+            for (int nuidx = 0; nuidx < nspecies_; ++nuidx) {
+              uradm1_(m, radiationm1::CombinedIdx(nuidx, M1_E_IDX, m1_nvars_), k, j, i) = m1_params_.rad_E_floor;
+              if (nspecies_ > 1) {
+                uradm1_(m, radiationm1::CombinedIdx(nuidx, M1_N_IDX, m1_nvars_), k, j, i) = m1_params_.rad_N_floor;
+              }
+            }
+
+        } else {
+
+            uradm1_(m, radiationm1::CombinedIdx(0, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_0;
+            uradm1_(m, radiationm1::CombinedIdx(1, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_1;
+            uradm1_(m, radiationm1::CombinedIdx(2, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_2;
+            uradm1_(m, radiationm1::CombinedIdx(3, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_3;
+            uradm1_(m, radiationm1::CombinedIdx(0, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_0;
+            uradm1_(m, radiationm1::CombinedIdx(1, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_1;
+            uradm1_(m, radiationm1::CombinedIdx(2, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_2;
+            uradm1_(m, radiationm1::CombinedIdx(3, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_3;
+
         }
+
       });
 
   // Convert primitives to conserved vars
