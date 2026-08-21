@@ -106,9 +106,27 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
   Real M1_E_1 = pin->GetOrAddReal("problem", "M1_E_1", -1.);
   Real M1_E_2 = pin->GetOrAddReal("problem", "M1_E_2", -1.);
   Real M1_E_3 = pin->GetOrAddReal("problem", "M1_E_3", -1.);
-  bool initM1withfloors = (
+  bool initM1Denswithfloors = (
         M1_N_0 < 0. || M1_N_1 < 0. || M1_N_2 < 0. || M1_N_3 < 0. ||
         M1_E_0 < 0. || M1_E_1 < 0. || M1_E_2 < 0. || M1_E_3 < 0.);
+
+  Real M1_Fx_0 = pin->GetOrAddReal("problem", "M1_Fx_0", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fy_0 = pin->GetOrAddReal("problem", "M1_Fy_0", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fz_0 = pin->GetOrAddReal("problem", "M1_Fz_0", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fx_1 = pin->GetOrAddReal("problem", "M1_Fx_1", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fy_1 = pin->GetOrAddReal("problem", "M1_Fy_1", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fz_1 = pin->GetOrAddReal("problem", "M1_Fz_1", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fx_2 = pin->GetOrAddReal("problem", "M1_Fx_2", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fy_2 = pin->GetOrAddReal("problem", "M1_Fy_2", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fz_2 = pin->GetOrAddReal("problem", "M1_Fz_2", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fx_3 = pin->GetOrAddReal("problem", "M1_Fx_3", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fy_3 = pin->GetOrAddReal("problem", "M1_Fy_3", std::numeric_limits<Real>::quiet_NaN());
+  Real M1_Fz_3 = pin->GetOrAddReal("problem", "M1_Fz_3", std::numeric_limits<Real>::quiet_NaN());
+  bool initM1Fluxwithfloors = (
+        std::isnan(M1_Fx_0) || std::isnan(M1_Fy_0) || std::isnan(M1_Fz_0) ||
+        std::isnan(M1_Fx_1) || std::isnan(M1_Fy_1) || std::isnan(M1_Fz_1) ||
+        std::isnan(M1_Fx_2) || std::isnan(M1_Fy_2) || std::isnan(M1_Fz_2) ||
+        std::isnan(M1_Fx_3) || std::isnan(M1_Fy_3) || std::isnan(M1_Fz_3) );
   
   Real mb{};
   Primitive::EOS<EOSPolicy, ErrorPolicy> &eos =
@@ -158,8 +176,7 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
         w0_(m, IPR, k, j, i) = eos.GetPressure(nb, temp, &ye_);
         w0_(m, IYF, k, j, i) = ye;
 
-        if (initM1withfloors) {
-
+        if (initM1Denswithfloors) {
             for (int nuidx = 0; nuidx < nspecies_; ++nuidx) {
               uradm1_(m, radiationm1::CombinedIdx(nuidx, M1_E_IDX, m1_nvars_), k, j, i) = m1_params_.rad_E_floor;
               if (nspecies_ > 1) {
@@ -168,7 +185,6 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
             }
 
         } else {
-
             uradm1_(m, radiationm1::CombinedIdx(0, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_0;
             uradm1_(m, radiationm1::CombinedIdx(1, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_1;
             uradm1_(m, radiationm1::CombinedIdx(2, M1_N_IDX, m1_nvars_), k, j, i) = M1_N_2;
@@ -177,10 +193,26 @@ void ProblemGenerator::RadiationM1SingleZoneTest_(ParameterInput *pin,
             uradm1_(m, radiationm1::CombinedIdx(1, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_1;
             uradm1_(m, radiationm1::CombinedIdx(2, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_2;
             uradm1_(m, radiationm1::CombinedIdx(3, M1_E_IDX, m1_nvars_), k, j, i) = M1_E_3;
+        }
 
+        if (!initM1Fluxwithfloors) {
+            uradm1_(m, radiationm1::CombinedIdx(0, M1_FX_IDX, m1_nvars_), k, j, i) = M1_Fx_0;
+            uradm1_(m, radiationm1::CombinedIdx(0, M1_FY_IDX, m1_nvars_), k, j, i) = M1_Fy_0;
+            uradm1_(m, radiationm1::CombinedIdx(0, M1_FZ_IDX, m1_nvars_), k, j, i) = M1_Fz_0;
+            uradm1_(m, radiationm1::CombinedIdx(1, M1_FX_IDX, m1_nvars_), k, j, i) = M1_Fx_1;
+            uradm1_(m, radiationm1::CombinedIdx(1, M1_FY_IDX, m1_nvars_), k, j, i) = M1_Fy_1;
+            uradm1_(m, radiationm1::CombinedIdx(1, M1_FZ_IDX, m1_nvars_), k, j, i) = M1_Fz_1;
+            uradm1_(m, radiationm1::CombinedIdx(2, M1_FX_IDX, m1_nvars_), k, j, i) = M1_Fx_2;
+            uradm1_(m, radiationm1::CombinedIdx(2, M1_FY_IDX, m1_nvars_), k, j, i) = M1_Fy_2;
+            uradm1_(m, radiationm1::CombinedIdx(2, M1_FZ_IDX, m1_nvars_), k, j, i) = M1_Fz_2;
+            uradm1_(m, radiationm1::CombinedIdx(3, M1_FX_IDX, m1_nvars_), k, j, i) = M1_Fx_3;
+            uradm1_(m, radiationm1::CombinedIdx(3, M1_FY_IDX, m1_nvars_), k, j, i) = M1_Fy_3;
+            uradm1_(m, radiationm1::CombinedIdx(3, M1_FZ_IDX, m1_nvars_), k, j, i) = M1_Fz_3;
         }
 
       });
+
+  std::cout << "initM1Denswithfloors = " << initM1Denswithfloors << "\ninitM1Fluxwithfloors=" << initM1Fluxwithfloors << std::endl;
 
   // Convert primitives to conserved vars
   pmbp->pdyngr->PrimToConInit(0, (n1 - 1), 0, (n2 - 1), 0, (n3 - 1));
