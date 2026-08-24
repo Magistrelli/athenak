@@ -313,7 +313,8 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
                 !Kokkos::isfinite(abs_0_non_th_loc[nuidx]) ||
                 !Kokkos::isfinite(abs_1_non_th_loc[nuidx]);
 
-            if (bad_m1 || bad_fluid || bad_metric || bad_rates) {
+            // if (bad_m1 || bad_fluid || bad_metric || bad_rates) {
+            if (m==0 && k==0 && j==0 && i==6) {
               const int error_index =
                   Kokkos::atomic_fetch_add(&nurates_nerrs_(0), 1);
 
@@ -471,7 +472,8 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
                 !Kokkos::isfinite(abs_0_non_th_loc[nuidx]) ||
                 !Kokkos::isfinite(abs_1_non_th_loc[nuidx]);
 
-            if (bad_m1 || bad_fluid || bad_metric || bad_rates) {
+            // if (bad_m1 || bad_fluid || bad_metric || bad_rates) {
+            if (m==0 && k==0 && j==0 && i==6) {
               const int error_index =
                   Kokkos::atomic_fetch_add(&nurates_nerrs_(0), 1);
 
