@@ -365,6 +365,7 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
                   "    mu_n = %.17g\n"
                   "    mu_p = %.17g\n"
                   "    mu_e = %.17g\n"
+                  "    mu_le = %.17g\n"
                   "  Metric vars: \n"
                   "    g_dd = {%.17g, %.17g, %.17g, %.17g, %.17g, %.17g}\n"
                   "    K_dd = {%.17g, %.17g, %.17g, %.17g, %.17g, %.17g}\n"
@@ -394,7 +395,7 @@ TaskStatus RadiationM1::CalcOpacityNurates_(Driver *pdrive, int stage) {
                   m1_Fz[nuidx], m1_N[nuidx], chi_loc[nuidx],
                   J[nuidx], m1_H2[nuidx], m1_Gamma[nuidx],
                   rnnu[nuidx], nudens_0[nuidx], nudens_1[nuidx],
-                  nb, T, Y, yp, yn, mu_n, mu_p, mu_e,
+                  nb, T, Y, yp, yn, mu_n, mu_p, mu_e, mu_le,
                   adm.g_dd(m, 0, 0, k, j, i), adm.g_dd(m, 0, 1, k, j, i),
                   adm.g_dd(m, 0, 2, k, j, i), adm.g_dd(m, 1, 1, k, j, i),
                   adm.g_dd(m, 1, 2, k, j, i), adm.g_dd(m, 2, 2, k, j, i),
